@@ -1,0 +1,336 @@
+- args:
+    tables:
+    - array_relationships:
+      - name: books
+        using:
+          foreign_key_constraint_on:
+            column: author_id
+            table:
+              name: book
+              schema: public
+      table:
+        name: author
+        schema: public
+    - array_relationships:
+      - name: comments
+        using:
+          foreign_key_constraint_on:
+            column: book_id
+            table:
+              name: comment
+              schema: public
+      - name: libraries
+        using:
+          foreign_key_constraint_on:
+            column: book_id
+            table:
+              name: library
+              schema: public
+      object_relationships:
+      - name: author
+        using:
+          foreign_key_constraint_on: author_id
+      table:
+        name: book
+        schema: public
+    - object_relationships:
+      - name: book
+        using:
+          foreign_key_constraint_on: book_id
+      table:
+        name: comment
+        schema: public
+    - object_relationships:
+      - name: book
+        using:
+          foreign_key_constraint_on: book_id
+      table:
+        name: library
+        schema: public
+    - array_relationships:
+      - name: parameters
+        using:
+          foreign_key_constraint_on:
+            column: tada_id
+            table:
+              name: tada_parameters
+              schema: tadalist
+      - name: sharees
+        using:
+          foreign_key_constraint_on:
+            column: tada_id
+            table:
+              name: tada_shares
+              schema: tadalist
+      - name: tags
+        using:
+          foreign_key_constraint_on:
+            column: tada_id
+            table:
+              name: tada_tags
+              schema: tadalist
+      object_relationships:
+      - name: owner
+        using:
+          foreign_key_constraint_on: owner_id
+      select_permissions:
+      - permission:
+          allow_aggregations: true
+          columns:
+          - tada_id
+          - name
+          - description
+          - updated_at
+          - created_at
+          - minimap_url
+          - owner_id
+          filter:
+            _or:
+            - owner_id:
+                _eq: X-Hasura-Authenticated-User-Id
+            - sharees:
+                user_id:
+                  _eq: X-Hasura-Authenticated-User-Id
+        role: creator
+      - permission:
+          allow_aggregations: true
+          columns:
+          - tada_id
+          - name
+          - description
+          - updated_at
+          - created_at
+          - minimap_url
+          - owner_id
+          filter:
+            _or:
+            - owner_id:
+                _eq: X-Hasura-Authenticated-User-Id
+            - sharees:
+                user_id:
+                  _eq: X-Hasura-Authenticated-User-Id
+        role: operator
+      table:
+        name: tada
+        schema: tadalist
+    - object_relationships:
+      - name: tada
+        using:
+          foreign_key_constraint_on: tada_id
+      table:
+        name: tada_parameters
+        schema: tadalist
+    - computed_fields:
+      - comment: Is the user the owner of the tada
+        definition:
+          function:
+            name: share_is_tada_owner
+            schema: tadalist
+          table_argument: null
+        name: is_owner
+      object_relationships:
+      - name: tada
+        using:
+          foreign_key_constraint_on: tada_id
+      - name: user
+        using:
+          foreign_key_constraint_on: user_id
+      select_permissions:
+      - permission:
+          allow_aggregations: true
+          columns: '*'
+          computed_fields:
+          - is_owner
+          filter:
+            _or:
+            - user_id:
+                _eq: X-Hasura-Authenticated-User-Id
+            - tada:
+                owner_id:
+                  _eq: X-Hasura-Authenticated-User-Id
+            - tada:
+                sharees:
+                  user_id:
+                    _eq: X-Hasura-Authenticated-User-Id
+        role: creator
+      - permission:
+          allow_aggregations: true
+          columns: '*'
+          computed_fields:
+          - is_owner
+          filter:
+            _or:
+            - user_id:
+                _eq: X-Hasura-Authenticated-User-Id
+            - tada:
+                owner_id:
+                  _eq: X-Hasura-Authenticated-User-Id
+            - tada:
+                sharees:
+                  user_id:
+                    _eq: X-Hasura-Authenticated-User-Id
+        role: operator
+      table:
+        name: tada_shares
+        schema: tadalist
+    - object_relationships:
+      - name: tada
+        using:
+          foreign_key_constraint_on: tada_id
+      - name: tag
+        using:
+          foreign_key_constraint_on: name
+      select_permissions:
+      - permission:
+          allow_aggregations: true
+          columns:
+          - tada_id
+          - name
+          filter:
+            _or:
+            - tada:
+                owner_id:
+                  _eq: X-Hasura-Authenticated-User-Id
+            - tada:
+                sharees:
+                  user_id:
+                    _eq: X-Hasura-Authenticated-User-Id
+        role: creator
+      - permission:
+          allow_aggregations: true
+          columns:
+          - tada_id
+          - name
+          filter:
+            _or:
+            - tada:
+                owner_id:
+                  _eq: X-Hasura-Authenticated-User-Id
+            - tada:
+                sharees:
+                  user_id:
+                    _eq: X-Hasura-Authenticated-User-Id
+        role: operator
+      table:
+        name: tada_tags
+        schema: tadalist
+    - array_relationships:
+      - name: tadas
+        using:
+          foreign_key_constraint_on:
+            column: name
+            table:
+              name: tada_tags
+              schema: tadalist
+      select_permissions:
+      - permission:
+          allow_aggregations: true
+          columns:
+          - name
+          filter:
+            _or:
+            - tadas:
+                tada:
+                  owner_id:
+                    _eq: X-Hasura-Authenticated-User-Id
+            - tadas:
+                tada:
+                  sharees:
+                    user_id:
+                      _eq: X-Hasura-Authenticated-User-Id
+        role: creator
+      - permission:
+          allow_aggregations: true
+          columns:
+          - name
+          filter:
+            _or:
+            - tadas:
+                tada:
+                  owner_id:
+                    _eq: X-Hasura-Authenticated-User-Id
+            - tadas:
+                tada:
+                  sharees:
+                    user_id:
+                      _eq: X-Hasura-Authenticated-User-Id
+        role: operator
+      table:
+        name: tag
+        schema: tadalist
+    - array_relationships:
+      - name: members
+        using:
+          foreign_key_constraint_on:
+            column: team_id
+            table:
+              name: user
+              schema: tadalist
+      select_permissions:
+      - permission:
+          allow_aggregations: true
+          columns:
+          - team_id
+          - name
+          filter:
+            team_id:
+              _eq: X-Hasura-Authenticated-Team-Id
+        role: creator
+      - permission:
+          allow_aggregations: true
+          columns:
+          - team_id
+          - name
+          filter:
+            team_id:
+              _eq: X-Hasura-Authenticated-Team-Id
+        role: operator
+      table:
+        name: team
+        schema: tadalist
+    - array_relationships:
+      - name: tadas
+        using:
+          foreign_key_constraint_on:
+            column: owner_id
+            table:
+              name: tada
+              schema: tadalist
+      - name: teamTadas
+        using:
+          foreign_key_constraint_on:
+            column: user_id
+            table:
+              name: tada_shares
+              schema: tadalist
+      object_relationships:
+      - name: team
+        using:
+          foreign_key_constraint_on: team_id
+      select_permissions:
+      - permission:
+          allow_aggregations: true
+          columns:
+          - avatar_img
+          - display_name
+          - team_id
+          - user_id
+          filter:
+            team_id:
+              _eq: X-Hasura-Authenticated-Team-Id
+        role: creator
+      - permission:
+          columns:
+          - avatar_img
+          - display_name
+          - team_id
+          - user_id
+          filter:
+            team_id:
+              _eq: X-Hasura-Authenticated-Team-Id
+        role: operator
+      table:
+        name: user
+        schema: tadalist
+    version: 2
+  type: replace_metadata

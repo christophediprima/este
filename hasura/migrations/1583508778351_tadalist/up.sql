@@ -1,8 +1,21 @@
 CREATE SCHEMA tadalist;
+CREATE TYPE public.tada_parameter AS ENUM (
+    'list',
+    'item'
+);
 CREATE TABLE tadalist.tada_shares (
     user_id text NOT NULL,
     tada_id uuid NOT NULL
 );
+CREATE FUNCTION public.share_is_tada_owner(tada_shares_row tadalist.tada_shares) RETURNS boolean
+    LANGUAGE sql STABLE
+    AS $$
+    SELECT EXISTS (
+        SELECT owner_id
+        FROM tadaList.tada
+        WHERE (owner_id = tada_shares_row.user_id AND tada_id = tada_shares_row.tada_id)
+    )
+$$;
 CREATE FUNCTION tadalist.set_current_timestamp_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -23,6 +36,26 @@ CREATE FUNCTION tadalist.share_is_tada_owner(tada_shares_row tadalist.tada_share
         WHERE (owner_id = tada_shares_row.user_id AND tada_id = tada_shares_row.tada_id)
     )
 $$;
+CREATE TABLE public.author (
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    tadaweb_id text NOT NULL
+);
+CREATE TABLE public.book (
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    title text NOT NULL,
+    author_id uuid NOT NULL
+);
+CREATE TABLE public.comment (
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    content text NOT NULL,
+    book_id uuid NOT NULL
+);
+CREATE TABLE public.library (
+    id uuid DEFAULT public.gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    book_id uuid NOT NULL
+);
 CREATE TABLE tadalist.tada (
     tada_id uuid DEFAULT public.gen_random_uuid() NOT NULL,
     name text NOT NULL,
@@ -57,6 +90,16 @@ CREATE TABLE tadalist."user" (
     avatar_img text NOT NULL,
     team_id text NOT NULL
 );
+ALTER TABLE ONLY public.author
+    ADD CONSTRAINT author_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.author
+    ADD CONSTRAINT author_tadaweb_id_key UNIQUE (tadaweb_id);
+ALTER TABLE ONLY public.book
+    ADD CONSTRAINT book_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.comment
+    ADD CONSTRAINT comment_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.library
+    ADD CONSTRAINT library_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY tadalist.tada_parameters
     ADD CONSTRAINT tada_parameters_pkey PRIMARY KEY (uuid);
 ALTER TABLE ONLY tadalist.tada
@@ -79,6 +122,12 @@ ALTER TABLE ONLY tadalist."user"
     ADD CONSTRAINT "user_userId_key" UNIQUE (user_id);
 CREATE TRIGGER set_tadalist_tada_parameters_updated_at BEFORE UPDATE ON tadalist.tada_parameters FOR EACH ROW EXECUTE FUNCTION tadalist.set_current_timestamp_updated_at();
 COMMENT ON TRIGGER set_tadalist_tada_parameters_updated_at ON tadalist.tada_parameters IS 'trigger to set value of column "updated_at" to current timestamp on row update';
+ALTER TABLE ONLY public.book
+    ADD CONSTRAINT book_author_id_fkey FOREIGN KEY (author_id) REFERENCES public.author(id) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.comment
+    ADD CONSTRAINT comment_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.book(id) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.library
+    ADD CONSTRAINT library_book_id_fkey FOREIGN KEY (book_id) REFERENCES public.book(id) ON UPDATE CASCADE ON DELETE CASCADE;
 ALTER TABLE ONLY tadalist.tada
     ADD CONSTRAINT "tada_ownerId_fkey" FOREIGN KEY (owner_id) REFERENCES tadalist."user"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
 ALTER TABLE ONLY tadalist.tada_parameters

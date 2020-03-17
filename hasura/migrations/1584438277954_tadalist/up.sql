@@ -3,19 +3,6 @@ CREATE TYPE public.tada_parameter AS ENUM (
     'list',
     'item'
 );
-CREATE TABLE tadalist.tada_shares (
-    user_id text NOT NULL,
-    tada_id uuid NOT NULL
-);
-CREATE FUNCTION public.share_is_tada_owner(tada_shares_row tadalist.tada_shares) RETURNS boolean
-    LANGUAGE sql STABLE
-    AS $$
-    SELECT EXISTS (
-        SELECT owner_id
-        FROM tadaList.tada
-        WHERE (owner_id = tada_shares_row.user_id AND tada_id = tada_shares_row.tada_id)
-    )
-$$;
 CREATE FUNCTION tadalist.set_current_timestamp_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -27,6 +14,10 @@ BEGIN
   RETURN _new;
 END;
 $$;
+CREATE TABLE tadalist.tada_shares (
+    user_id text NOT NULL,
+    tada_id uuid NOT NULL
+);
 CREATE FUNCTION tadalist.share_is_tada_owner(tada_shares_row tadalist.tada_shares) RETURNS boolean
     LANGUAGE sql STABLE
     AS $$
